@@ -1,0 +1,17 @@
+name: CYM-SOCKET
+main: fr.craftyourmind.socket.spigot.SocketSpigot
+version: 1.0
+api-version: 1.15
+author: Octave
+description: CYM Socket API
+website: https://craftyourmind.fr
+commands:
+  moveotherto:
+    aliases: [mot]
+  moveto:
+    aliases: [mt]
+  runcmd:
+    aliases: [rc]
+  test:
+    usage: /test
+    description: test

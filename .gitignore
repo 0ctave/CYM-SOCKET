@@ -1,0 +1,5 @@
+CYM-Dungeon.iml
+# Project exclude paths
+/.gradle/
+/build/
+/build/classes/java/main/

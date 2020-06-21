@@ -1,0 +1,4 @@
+name: CYM-SOCKET
+main: fr.craftyourmind.socket.bungee.SocketBungee
+version: ${project.version}
+author: Octave
