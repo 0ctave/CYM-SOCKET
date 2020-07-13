@@ -9,6 +9,7 @@ import fr.craftyourmind.socket.utils.Side;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class Socket {
@@ -34,7 +35,7 @@ public class Socket {
         responseListener = new ResponseListener(this);
 
         this.logger = logger;
-        logger.info("Socket initialized");
+        logger.info("Socket initialized on " + api.getServerName());
     }
 
     public void addTunnel(Tunnel tunnel) {
@@ -69,6 +70,15 @@ public class Socket {
         message.setServer(api.getServerName());
         message.setChannel(channel);
         api.sendToBungee(channel, message.toBytes(), responseListener, timeout);
+    }
+
+    protected void sendPlayersToServer(Set<String> playerNames, String serverName) {
+        api.movePlayers(playerNames, serverName);
+    }
+
+    protected void sendChatMessagesToPlayers(List<String> messages, Set<String> playerNames, String serverName) {
+        for (String player : playerNames)
+            api.sendChatMessages(messages, player, serverName);
     }
 
     public void handshake(String serverName) {

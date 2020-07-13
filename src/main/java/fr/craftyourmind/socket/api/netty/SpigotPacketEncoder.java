@@ -25,36 +25,30 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import static fr.craftyourmind.socket.api.netty.packets.PacketIdMapping.isIdForPacket;
 
 
-public class SpigotPacketEncoder extends MessageToByteEncoder<AbstractPacket>
-{
-  @Override
-  protected void encode(ChannelHandlerContext ctx, AbstractPacket packet, ByteBuf out)
-    throws Exception
-  {
-    byte packetId = PacketIdMapping.packetToId(packet.getClass());
+public class SpigotPacketEncoder extends MessageToByteEncoder<AbstractPacket> {
+    @Override
+    protected void encode(ChannelHandlerContext ctx, AbstractPacket packet, ByteBuf out)
+            throws Exception {
+        byte packetId = PacketIdMapping.packetToId(packet.getClass());
 
-    if (isIdForPacket(packetId, PacketToBungeeRegister.class) ||
-      isIdForPacket(packetId, PacketToBungeeRequest.class) ||
-      isIdForPacket(packetId, PacketToAnyResponse.class) ||
-      isIdForPacket(packetId, PacketToBungeeForward.class))
-    {
-      out.writeByte(packetId);
-      packet.write(out);
+        if (isIdForPacket(packetId, PacketToBungeeRegister.class) ||
+                isIdForPacket(packetId, PacketToBungeeRequest.class) ||
+                isIdForPacket(packetId, PacketToAnyResponse.class) ||
+                isIdForPacket(packetId, PacketToBungeeForward.class)) {
+            out.writeByte(packetId);
+            packet.write(out);
+        } else {
+            // All acceptable packet (IDs) have been checked.
+            System.err.println("[SpigotPacketEncoder] Unexpected packetId: " + packetId);
+            ctx.close();
+        }
     }
-    else
-    {
-      // All acceptable packet (IDs) have been checked.
-      System.err.println("[SpigotPacketEncoder] Unexpected packetId: " + packetId);
-      ctx.close();
-    }
-  }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) throws Exception
-  {
-    // Print the exception and then close the channel
-    System.err.println("[SpigotPacketEncoder] Closing connection due to exception ...");
-    throwable.printStackTrace(System.err);
-    ctx.close();
-  }
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) throws Exception {
+        // Print the exception and then close the channel
+        System.err.println("[SpigotPacketEncoder] Closing connection due to exception ...");
+        throwable.printStackTrace(System.err);
+        ctx.close();
+    }
 }

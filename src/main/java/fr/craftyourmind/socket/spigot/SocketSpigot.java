@@ -78,6 +78,9 @@ public class SocketSpigot extends JavaPlugin implements TieIn {
 
         SocketApi api = new SocketApi(this, threadPoolExecutor, messageNotifier, Side.CLIENT);
 
+        socket = new Socket(Side.CLIENT, LOGGER);
+        getLogger().info("The Client Socket is setup");
+
         playerUpdateChannelListener = new PlayerUpdateChannelListener(api);
         playerUpdateChannelListener.register();
 
@@ -112,8 +115,6 @@ public class SocketSpigot extends JavaPlugin implements TieIn {
             e.printStackTrace();
             getLogger().severe("============================================================");
         }
-
-        socket = new Socket(Side.CLIENT, LOGGER);
 
         ScheduledExecutorService executorService = api.getScheduledExecutorService();
         executorService.schedule(() -> socket.handshake(config.getServerName()), 3, TimeUnit.SECONDS);

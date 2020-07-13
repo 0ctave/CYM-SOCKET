@@ -3,21 +3,16 @@ package fr.craftyourmind.socket.api;
 import fr.craftyourmind.socket.api.listener.DummyListener;
 import fr.craftyourmind.socket.api.listener.Listener;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class Tunnel {
 
-    private final Tunnel instance;
     private final String channel;
     public Map<UUID, Message> requests = new HashMap<>();
     private Listener listener;
     private Socket socket;
 
     public Tunnel(String channel) {
-        this.instance = this;
         this.channel = channel;
         this.listener = new DummyListener();
     }
@@ -50,6 +45,13 @@ public class Tunnel {
         socket.sendToBungee(channel, request);
     }
 
+    public void sendPlayersToServer(Set<String> playerNames, String serverName) {
+        socket.sendPlayersToServer(playerNames, serverName);
+    }
+
+    public void sendChatMessagesToPlayers(List<String> messages, Set<String> playerNames, String serverName) {
+        socket.sendChatMessagesToPlayers(messages, playerNames, serverName);
+    }
 
     public Listener getListener() {
         return listener;

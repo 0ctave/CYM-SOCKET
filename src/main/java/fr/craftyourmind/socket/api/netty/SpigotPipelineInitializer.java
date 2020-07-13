@@ -28,47 +28,44 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.util.concurrent.TimeUnit;
 
 
-public class SpigotPipelineInitializer extends ChannelInitializer
-{
-  private static final String READ_TIMEOUT_HANDLER = "read-timeout-handler";
-  private static final String FRAME_DECODER = "frame-decoder";
-  private static final String FRAME_PREPENDER = "frame-prepender";
-  private static final String PACKET_DECODER = "packet-decoder";
-  private static final String PACKET_ENCODER = "packet-encoder";
-  private static final int MAX_FRAME_SIZE = 4 * 1024 * 1024; // 4 MB
-  private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
-  private static final int FRAME_LENGTH_FIELD_LENGTH = 3;
-  private static final int FRAME_LENGTH_ADJUSTMENT = 0;
+public class SpigotPipelineInitializer extends ChannelInitializer {
+    private static final String READ_TIMEOUT_HANDLER = "read-timeout-handler";
+    private static final String FRAME_DECODER = "frame-decoder";
+    private static final String FRAME_PREPENDER = "frame-prepender";
+    private static final String PACKET_DECODER = "packet-decoder";
+    private static final String PACKET_ENCODER = "packet-encoder";
+    private static final int MAX_FRAME_SIZE = 4 * 1024 * 1024; // 4 MB
+    private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
+    private static final int FRAME_LENGTH_FIELD_LENGTH = 3;
+    private static final int FRAME_LENGTH_ADJUSTMENT = 0;
 
-  private final AbstractPacketHandler packetHandler;
+    private final AbstractPacketHandler packetHandler;
 
-  public SpigotPipelineInitializer(AbstractPacketHandler packetHandler)
-  {
-    Preconditions.checkNotNull(packetHandler, "packetHandler");
+    public SpigotPipelineInitializer(AbstractPacketHandler packetHandler) {
+        Preconditions.checkNotNull(packetHandler, "packetHandler");
 
-    this.packetHandler = packetHandler;
-  }
+        this.packetHandler = packetHandler;
+    }
 
-  @Override
-  protected void initChannel(Channel channel) throws Exception
-  {
-    ChannelPipeline pipeline = channel.pipeline();
+    @Override
+    protected void initChannel(Channel channel) throws Exception {
+        ChannelPipeline pipeline = channel.pipeline();
 
-    // Add a read timeout handler
-    ReadTimeoutHandler timeoutHandler = new ReadTimeoutHandler(15, TimeUnit.SECONDS);
-    pipeline.addLast(READ_TIMEOUT_HANDLER, timeoutHandler);
+        // Add a read timeout handler
+        ReadTimeoutHandler timeoutHandler = new ReadTimeoutHandler(2, TimeUnit.SECONDS);
+        pipeline.addLast(READ_TIMEOUT_HANDLER, timeoutHandler);
 
-    // Add a frame decoder
-    LengthFieldBasedFrameDecoder frameDecoder = new LengthFieldBasedFrameDecoder(MAX_FRAME_SIZE,
-      FRAME_LENGTH_FIELD_OFFSET, FRAME_LENGTH_FIELD_LENGTH, FRAME_LENGTH_ADJUSTMENT,
-      FRAME_LENGTH_FIELD_LENGTH);
-    pipeline.addLast(FRAME_DECODER, frameDecoder);
+        // Add a frame decoder
+        LengthFieldBasedFrameDecoder frameDecoder = new LengthFieldBasedFrameDecoder(MAX_FRAME_SIZE,
+                FRAME_LENGTH_FIELD_OFFSET, FRAME_LENGTH_FIELD_LENGTH, FRAME_LENGTH_ADJUSTMENT,
+                FRAME_LENGTH_FIELD_LENGTH);
+        pipeline.addLast(FRAME_DECODER, frameDecoder);
 
-    // Add a frame prepender
-    pipeline.addLast(FRAME_PREPENDER, new LengthFieldPrepender(FRAME_LENGTH_FIELD_LENGTH, false));
+        // Add a frame prepender
+        pipeline.addLast(FRAME_PREPENDER, new LengthFieldPrepender(FRAME_LENGTH_FIELD_LENGTH, false));
 
-    // Add a packet decoder and encoder
-    pipeline.addLast(PACKET_DECODER, new SpigotPacketDecoder(packetHandler));
-    pipeline.addLast(PACKET_ENCODER, new SpigotPacketEncoder());
-  }
+        // Add a packet decoder and encoder
+        pipeline.addLast(PACKET_DECODER, new SpigotPacketDecoder(packetHandler));
+        pipeline.addLast(PACKET_ENCODER, new SpigotPacketEncoder());
+    }
 }

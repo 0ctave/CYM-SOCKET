@@ -30,78 +30,64 @@ import java.util.List;
 import static fr.craftyourmind.socket.api.netty.packets.PacketIdMapping.isIdForPacket;
 
 
-public class SpigotPacketDecoder extends MessageToMessageDecoder<ByteBuf>
-{
-  private final AbstractPacketHandler packetHandler;
+public class SpigotPacketDecoder extends MessageToMessageDecoder<ByteBuf> {
+    private final AbstractPacketHandler packetHandler;
 
-  public SpigotPacketDecoder(AbstractPacketHandler packetHandler)
-  {
-    Preconditions.checkNotNull(packetHandler, "packetHandler");
+    public SpigotPacketDecoder(AbstractPacketHandler packetHandler) {
+        Preconditions.checkNotNull(packetHandler, "packetHandler");
 
-    this.packetHandler = packetHandler;
-  }
-
-  @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception
-  {
-    byte packetId = in.readByte();
-
-    if (isIdForPacket(packetId, PacketToSpigotRegister.class))
-    {
-      PacketToSpigotRegister packet = new PacketToSpigotRegister();
-      packet.read(in);
-
-      packetHandler.handle(packet);
-    }
-    else if (isIdForPacket(packetId, PacketToSpigotRequest.class))
-    {
-      PacketToSpigotRequest packet = new PacketToSpigotRequest();
-      packet.read(in);
-
-      packetHandler.handle(packet);
-    }
-    else if (isIdForPacket(packetId, PacketToAnyResponse.class))
-    {
-      PacketToAnyResponse packet = new PacketToAnyResponse();
-      packet.read(in);
-
-      packetHandler.handle(packet);
-    }
-    else
-    {
-      // All acceptable packet (IDs) have been checked.
-      System.err.println("[SpigotPacketDecoder] Unexpected packetId: " + packetId);
-      ctx.close();
+        this.packetHandler = packetHandler;
     }
 
-    if (in.isReadable())
-    {
-      // There should not be any leftover bytes.
-      System.err.println("[SpigotPacketDecoder] Unexpected extra bytes. packetId: " + packetId);
-      ctx.close();
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception {
+        byte packetId = in.readByte();
+
+        if (isIdForPacket(packetId, PacketToSpigotRegister.class)) {
+            PacketToSpigotRegister packet = new PacketToSpigotRegister();
+            packet.read(in);
+
+            packetHandler.handle(packet);
+        } else if (isIdForPacket(packetId, PacketToSpigotRequest.class)) {
+            PacketToSpigotRequest packet = new PacketToSpigotRequest();
+            packet.read(in);
+
+            packetHandler.handle(packet);
+        } else if (isIdForPacket(packetId, PacketToAnyResponse.class)) {
+            PacketToAnyResponse packet = new PacketToAnyResponse();
+            packet.read(in);
+
+            packetHandler.handle(packet);
+        } else {
+            // All acceptable packet (IDs) have been checked.
+            System.err.println("[SpigotPacketDecoder] Unexpected packetId: " + packetId);
+            ctx.close();
+        }
+
+        if (in.isReadable()) {
+            // There should not be any leftover bytes.
+            System.err.println("[SpigotPacketDecoder] Unexpected extra bytes. packetId: " + packetId);
+            ctx.close();
+        }
     }
-  }
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception
-  {
-    packetHandler.onChannelActive(ctx.channel());
-    super.channelActive(ctx);
-  }
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        packetHandler.onChannelActive(ctx.channel());
+        super.channelActive(ctx);
+    }
 
-  @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception
-  {
-    packetHandler.onChannelInactive();
-    super.channelInactive(ctx);
-  }
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        packetHandler.onChannelInactive();
+        super.channelInactive(ctx);
+    }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) throws Exception
-  {
-    // Print the exception and then close the channel.
-    System.err.println("[SpigotPacketDecoder] Closing connection due to exception ...");
-    throwable.printStackTrace(System.err);
-    ctx.close();
-  }
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) throws Exception {
+        // Print the exception and then close the channel.
+        System.err.println("[SpigotPacketDecoder] Closing connection due to exception ...");
+        throwable.printStackTrace(System.err);
+        ctx.close();
+    }
 }

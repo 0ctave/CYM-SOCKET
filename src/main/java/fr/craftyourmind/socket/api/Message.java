@@ -3,6 +3,7 @@ package fr.craftyourmind.socket.api;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import org.bukkit.scoreboard.Objective;
 
 import java.util.*;
 
@@ -23,6 +24,10 @@ public class Message {
 
     public Message(String request, Object... elements) {
         this("CYM", request, elements);
+    }
+
+    public Message(String request, List<Object> elements) {
+        this("CYM", request, elements.toArray());
     }
 
     public Message(String channel, String request, Object[] elements) {
@@ -61,6 +66,7 @@ public class Message {
 
     public Message(ByteArrayDataInput input) {
         channel = input.readUTF();
+        server = input.readUTF();
 
         id = UUID.fromString(input.readUTF());
         request = input.readUTF();
@@ -120,6 +126,7 @@ public class Message {
         ByteArrayDataOutput output = ByteStreams.newDataOutput();
 
         output.writeUTF(channel);
+        output.writeUTF(server);
 
         for (String opt : header) {
             output.writeUTF(opt);
@@ -156,9 +163,32 @@ public class Message {
         ByteArrayDataOutput output = ByteStreams.newDataOutput();
 
         output.writeUTF(channel);
+        output.writeUTF(server);
         output.writeUTF(id.toString());
         output.writeUTF(request);
-        output.writeUTF("null");
+
+        if (response.size() > 0) {
+            StringBuilder format = new StringBuilder();
+            for (Object element : response)
+                if (element instanceof String)
+                    format.append("s/");
+                else if (element instanceof Integer)
+                    format.append("i/");
+                else if (element instanceof Float)
+                    format.append("f/");
+                else if (element instanceof Double)
+                    format.append("d/");
+                else if (element instanceof Boolean)
+                    format.append("b/");
+                else if (element instanceof Short)
+                    format.append("m/");
+                else if (element instanceof Long)
+                    format.append("l/");
+            this.format = format.toString();
+        } else
+            this.format = "null";
+
+        output.writeUTF(this.format);
 
         arrayToBytes(output, response);
 
@@ -195,7 +225,7 @@ public class Message {
         return iterator.next();
     }
 
-    public void setServer(String serverName) {
+    public void setServer(String server) {
         this.server = server;
     }
 

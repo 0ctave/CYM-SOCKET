@@ -31,129 +31,108 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
-public class SocketClient
-{
-  private final String hostname;
-  private final int port;
-  private final Bootstrap bootstrap;
-  private final EventLoopGroup workerGroup = new NioEventLoopGroup(1);
-  private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
+public class SocketClient {
+    private final String hostname;
+    private final int port;
+    private final Bootstrap bootstrap;
+    private final EventLoopGroup workerGroup = new NioEventLoopGroup(1);
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
 
-  private ConnectionState connectionState = ConnectionState.INITIAL;
+    private ConnectionState connectionState = ConnectionState.INITIAL;
 
-  public SocketClient(String hostname, int port, AbstractPacketHandler packetHandler)
-  {
-    Preconditions.checkArgument(hostname != null && !hostname.isEmpty(), "hostname");
-    Preconditions.checkArgument(port > 0, "port");
-    Preconditions.checkNotNull(packetHandler, "packetHandler");
+    public SocketClient(String hostname, int port, AbstractPacketHandler packetHandler) {
+        Preconditions.checkArgument(hostname != null && !hostname.isEmpty(), "hostname");
+        Preconditions.checkArgument(port > 0, "port");
+        Preconditions.checkNotNull(packetHandler, "packetHandler");
 
-    this.hostname = hostname;
-    this.port = port;
-    this.bootstrap = new Bootstrap()
-      .group(workerGroup)
-      .channel(NioSocketChannel.class)
-      .handler(new SpigotPipelineInitializer(packetHandler));
-  }
-
-  public synchronized void start() throws Exception
-  {
-    if (connectionState != ConnectionState.INITIAL)
-    {
-      throw new IllegalStateException("SockExchangeClient has already been started");
+        this.hostname = hostname;
+        this.port = port;
+        this.bootstrap = new Bootstrap()
+                .group(workerGroup)
+                .channel(NioSocketChannel.class)
+                .handler(new SpigotPipelineInitializer(packetHandler));
     }
 
-    connectionState = ConnectionState.NOT_CONNECTED;
+    public synchronized void start() throws Exception {
+        if (connectionState != ConnectionState.INITIAL) {
+            throw new IllegalStateException("SockExchangeClient has already been started");
+        }
 
-    // Schedule task to try and connect if disconnected
-    executorService.scheduleAtFixedRate(this::connect, 1, 1, TimeUnit.SECONDS);
+        connectionState = ConnectionState.NOT_CONNECTED;
 
-    // Connect
-    connectNow();
-  }
+        // Schedule task to try and connect if disconnected
+        executorService.scheduleAtFixedRate(this::connect, 1, 1, TimeUnit.SECONDS);
 
-  public synchronized void shutdown()
-  {
-    if (connectionState == ConnectionState.INITIAL)
-    {
-      throw new IllegalStateException("SockExchangeClient has not been started");
+        // Connect
+        connectNow();
     }
 
-    executorService.shutdown();
-    workerGroup.shutdownGracefully();
-  }
+    public synchronized void shutdown() {
+        if (connectionState == ConnectionState.INITIAL) {
+            throw new IllegalStateException("SockExchangeClient has not been started");
+        }
 
-  private synchronized void connect()
-  {
-    if (connectionState == ConnectionState.NOT_CONNECTED)
-    {
-      // Mark state at connecting
-      connectionState = ConnectionState.CONNECTING;
-
-      // Use the bootstrap to start
-      ChannelFuture future = bootstrap.connect(hostname, port);
-      future.addListener(this::handleChannelConnectFuture);
-      future.channel().closeFuture().addListener(this::handleChannelCloseFuture);
+        executorService.shutdown();
+        workerGroup.shutdownGracefully();
     }
-  }
 
-  private synchronized void connectNow() throws Exception
-  {
-    if (connectionState == ConnectionState.NOT_CONNECTED)
-    {
-      // Mark state at connecting
-      connectionState = ConnectionState.CONNECTING;
+    private synchronized void connect() {
+        if (connectionState == ConnectionState.NOT_CONNECTED) {
+            // Mark state at connecting
+            connectionState = ConnectionState.CONNECTING;
 
-      // Use the bootstrap to start
-      ChannelFuture future = bootstrap.connect(hostname, port);
-      future.addListener(this::handleChannelConnectFuture);
-      future.channel().closeFuture().addListener(this::handleChannelCloseFuture);
-
-      // Wait for the connection attempt to finish
-      future.await();
+            // Use the bootstrap to start
+            ChannelFuture future = bootstrap.connect(hostname, port);
+            future.addListener(this::handleChannelConnectFuture);
+            future.channel().closeFuture().addListener(this::handleChannelCloseFuture);
+        }
     }
-  }
 
-  private synchronized void handleChannelConnectFuture(Future<? super Void> future)
-  {
-    if (future.isSuccess())
-    {
-      connectionState = ConnectionState.CONNECTED;
+    private synchronized void connectNow() throws Exception {
+        if (connectionState == ConnectionState.NOT_CONNECTED) {
+            // Mark state at connecting
+            connectionState = ConnectionState.CONNECTING;
+
+            // Use the bootstrap to start
+            ChannelFuture future = bootstrap.connect(hostname, port);
+            future.addListener(this::handleChannelConnectFuture);
+            future.channel().closeFuture().addListener(this::handleChannelCloseFuture);
+
+            // Wait for the connection attempt to finish
+            future.await();
+        }
     }
-    else
-    {
-      connectionState = ConnectionState.NOT_CONNECTED;
 
-      Throwable cause = future.cause();
-      printCauseToSystemErr(cause);
+    private synchronized void handleChannelConnectFuture(Future<? super Void> future) {
+        if (future.isSuccess()) {
+            connectionState = ConnectionState.CONNECTED;
+        } else {
+            connectionState = ConnectionState.NOT_CONNECTED;
+
+            Throwable cause = future.cause();
+            printCauseToSystemErr(cause);
+        }
     }
-  }
 
-  private synchronized void handleChannelCloseFuture(Future<? super Void> future)
-  {
-    connectionState = ConnectionState.NOT_CONNECTED;
-  }
-
-  private void printCauseToSystemErr(Throwable cause)
-  {
-    if ((cause instanceof ConnectException))
-    {
-      String connectExceptionMessage = cause.getMessage();
-      if (connectExceptionMessage.contains("Connection refused"))
-      {
-        System.err.println("[SockExchange] " + connectExceptionMessage);
-      }
+    private synchronized void handleChannelCloseFuture(Future<? super Void> future) {
+        connectionState = ConnectionState.NOT_CONNECTED;
     }
-    else
-    {
-      cause.printStackTrace(System.err);
-    }
-  }
 
-  private enum ConnectionState
-  {
-    INITIAL,
-    NOT_CONNECTED,
-    CONNECTING,
-    CONNECTED
-  }
+    private void printCauseToSystemErr(Throwable cause) {
+        if ((cause instanceof ConnectException)) {
+            String connectExceptionMessage = cause.getMessage();
+            if (connectExceptionMessage.contains("Connection refused")) {
+                System.err.println("[SockExchange] " + connectExceptionMessage);
+            }
+        } else {
+            cause.printStackTrace(System.err);
+        }
+    }
+
+    private enum ConnectionState {
+        INITIAL,
+        NOT_CONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
 }
