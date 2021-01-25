@@ -3,4 +3,4 @@ CYM-SOCKET is an api for the server CraftYourMind, using Netty to transmit packe
 
 It uses packets corrections and redundancy to transmit Messages with reliability.
 Messages are identified with their UUID.
-Command layer just have to register Listeners to receive and send packets on the desired channel.
+Command layers just have to register Listeners to receive and send packets on the desired channel.
